@@ -1,8 +1,28 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Microsoft.Extensions.Hosting;
 using System.CommandLine;
 using System.Reflection.Metadata;
 using System.Text.Json;
 using Webmarkers;
+using Serilog;
+using Microsoft.Extensions.Configuration;
+
+
+
+var builder = Host.CreateApplicationBuilder(args);
+//
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+builder.Services.AddSerilog((services, logconfiguration) =>
+{
+    logconfiguration.ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext();
+    }
+    );
+
+
+using IHost host = builder.Build();
+
 
 WebMarkerServices _webmark = new WebMarkerServices();
 Console.WriteLine("Welcome to Webmarker  o(*^＠^*)o");
@@ -10,7 +30,6 @@ Console.WriteLine("Welcome to Webmarker  o(*^＠^*)o");
 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WebMarker.json");
 FileInfo JsonFile = new FileInfo(filePath);
 var rootcommand = new RootCommand("a tool to add your web markings");
-
 var nameoption = new Option<string[]>("--name", "-n") { Description = "takes the website name", Required = true,AllowMultipleArgumentsPerToken=true };
 var urloption = new Option<string[]>("--url", "-u") { Description = "takes the website url", Required = true, AllowMultipleArgumentsPerToken = true };
 var categoryoption = new Option<string[]>("--category", "-c") { Description = "takes the website catogory", Required = false, AllowMultipleArgumentsPerToken = true };
@@ -64,6 +83,7 @@ linkcommand.Subcommands.Add(listcommand);
 linkcommand.Subcommands.Add(removeCommand);
 linkcommand.Subcommands.Add(updateCommand);
 ParseResult parseResult = rootcommand.Parse(args);
+
 
 listcommand.SetAction((ParseResult) => {
     string[] category =parseResult.GetValue(categoryoption);

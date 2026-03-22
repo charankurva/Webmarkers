@@ -29,17 +29,11 @@ namespace Webmarkers
                     Console.WriteLine("You cannot enter the same bookmark again");
                     Console.ResetColor();
                 }
-
-
             }
-            
         }
         public void RemoveWebMarker(int index) {
 
             webMarkers.RemoveAt(index-1); 
-
-        
-        
         }
 
         public void ListWebMarker(string[] category)
@@ -93,8 +87,9 @@ namespace Webmarkers
 
         public void FileWriter(FileInfo file)
         {
-            var json=JsonSerializer.Serialize(webMarkers, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(file.FullName, json);
+              var json = JsonSerializer.Serialize(webMarkers, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(file.FullName, json);
+            
         }
 
         public void UpdateWebMarker(int idval,string[] url)
