@@ -7,22 +7,36 @@ using Webmarkers;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
 
-var builder = Host.CreateApplicationBuilder(args);
-//
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-builder.Services.AddSerilog((services, logconfiguration) =>
+try
 {
-    logconfiguration.ReadFrom.Configuration(builder.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext();
+
+    var builder = Host.CreateApplicationBuilder(args);
+    //
+    //builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    builder.Services.AddSerilog((services, logconfiguration) =>
+    {
+        logconfiguration.ReadFrom.Configuration(builder.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext();
     }
-    );
+        );
 
 
-using IHost host = builder.Build();
-
+    using IHost host = builder.Build();
+    host.RunAsync();
+}catch(Exception ex)
+{
+    Log.Fatal(ex, "application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 WebMarkerServices _webmark = new WebMarkerServices();
 Console.WriteLine("Welcome to Webmarker  o(*^＠^*)o");
@@ -128,6 +142,8 @@ updateCommand.SetAction((ParseResult) => {
     }
 
 });
+
+importcommand.SetAction((parseResult) => { });
 
 parseResult.Invoke();
     

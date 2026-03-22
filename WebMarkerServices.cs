@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -63,8 +64,12 @@ namespace Webmarkers
         }
 
         public void ImportWebMarker(List<WebMarker> _webMarker) {
+            IEnumerable<WebMarker> result = from m in _webMarker
+                                            from m2 in webMarkers
+                                            where m.WebUrl != m2.WebUrl
+                                            select m;
             int count = 0;
-            foreach (WebMarker webMarker in _webMarker) {
+            foreach (WebMarker webMarker in result) {
                 webMarkers.Add(new WebMarker(webMarker.WebName,webMarker.WebUrl,webMarker.Category));
                 count++;
                 Console.WriteLine($"{count}) {webMarker.WebName} | {webMarker.WebUrl} |{webMarker.Category}");
