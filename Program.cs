@@ -1,11 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Spectre.Console;
 using System.CommandLine;
 using System.Reflection.Metadata;
 using System.Text.Json;
+using System.Xml.Linq;
 using Webmarkers;
-using Serilog;
-using Microsoft.Extensions.Configuration;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -25,30 +28,34 @@ try
             .Enrich.FromLogContext();
     }
         );
-
+    builder.Services.AddSingleton<IWebMarker, WebMarkerServices>();
 
     using IHost host = builder.Build();
+    IWebMarker _webmark = host.Services.GetRequiredService<IWebMarker>();
     host.RunAsync();
-}catch(Exception ex)
-{
-    Log.Fatal(ex, "application terminated unexpectedly");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
 
-WebMarkerServices _webmark = new WebMarkerServices();
+
+
 Console.WriteLine("Welcome to Webmarker  o(*^＠^*)o");
 //settting up default storage path for json file
 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WebMarker.json");
 FileInfo JsonFile = new FileInfo(filePath);
+//reading the filecontent into webmarkobject
+if (File.Exists(JsonFile.FullName))
+{
+    _webmark.FileReader(JsonFile);
+}
+
 var rootcommand = new RootCommand("a tool to add your web markings");
 var nameoption = new Option<string[]>("--name", "-n") { Description = "takes the website name", Required = true,AllowMultipleArgumentsPerToken=true };
 var urloption = new Option<string[]>("--url", "-u") { Description = "takes the website url", Required = true, AllowMultipleArgumentsPerToken = true };
 var categoryoption = new Option<string[]>("--category", "-c") { Description = "takes the website catogory", Required = false, AllowMultipleArgumentsPerToken = true };
 categoryoption.AcceptOnlyFromAmong("movie", "learning", "anime");
 var idOption = new Option<int>("--id", "-i");
+var interactiveCommand = new Command("interactive", "Manage bookmarks interactively")
+{
+};
+rootcommand.Subcommands.Add(interactiveCommand);
 //var fileinputoption = new Option<FileInfo>("--file", "-f") { DefaultValueFactory=(_)=> { return file; } };
 
 urloption.Validators.Add(result =>
@@ -99,18 +106,93 @@ linkcommand.Subcommands.Add(updateCommand);
 ParseResult parseResult = rootcommand.Parse(args);
 
 
-listcommand.SetAction((ParseResult) => {
-    string[] category =parseResult.GetValue(categoryoption);
-    if (File.Exists(JsonFile.FullName))
+    listcommand.SetAction(ListWebMarks);
+
+
+    void ListWebMarks(ParseResult ParseResult)
     {
-        _webmark.FileReader(JsonFile);
+        string[] category = parseResult.GetValue(categoryoption);
+        _webmark.ListWebMarker(category);
+
     }
-    _webmark.ListWebMarker(category); 
+    //rootcommand.SetAction(OnInterractiveCommand);
+    interactiveCommand.SetAction(OnInterractiveCommand);
+void OnInterractiveCommand(ParseResult parseresult)
+{
+        bool changed = false;
+    var appName = new FigletText("WEBMARKER")
+    {
+        Color = Color.Orange3,
+        Justification = Justify.Center
+    };
 
-});
+    var version = new Text("Version 1.0.0", new Style(Color.Grey))
+    {
+        Justification = Justify.Center
+    };
+
+    AnsiConsole.Write(appName);
+    AnsiConsole.Write(version);
+        bool IsRunnning = true;
+        while (IsRunnning)
+        {
 
 
-addcommand.SetAction((parseResult) => {
+            var menu = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                .Title("What you wanna do?")
+                .AddChoices("list", "add", "remove", "update","exit"));
+            AnsiConsole.MarkupLine($"you selected [green]{menu}[/]");
+
+            switch (menu)
+            {
+                case "list":
+                    {
+                        if (changed)
+                        {
+                            _webmark.FileWriter(JsonFile);
+                        }
+                        ListWebMarks(parseresult);
+                        changed = false;
+                        break;
+                    }
+                case "add":
+                    {
+                        var web_name = AnsiConsole.Ask<string>("[green]Enter your website name[/]:");
+                        var web_url = AnsiConsole.Ask<string>("[green]Enter your website url[/]:");
+                        var category = AnsiConsole.Prompt<string>(new SelectionPrompt<string>()
+                            .Title("[yellow]choose a category:[/]")
+                            .AddChoices("anime", "movie", "learning"));
+
+                        _webmark.AddWebMarker(web_name, web_url, category);
+
+                        AnsiConsole.MarkupLine(web_name);
+                        changed = true;
+                        break;
+                    }
+                case "update":
+                    {
+                        var id = AnsiConsole.Ask<int>("[green]Enter your website id[/]:");
+                        var web_url = AnsiConsole.Ask<string[]>("[green]Enter your new website url[/]:");
+                        _webmark.UpdateWebMarker(id, web_url);
+                        changed = true;
+                        break;
+                    }
+                case "remove":
+                    {
+                        var id = AnsiConsole.Ask<int>("[green]Enter your website id[/]:");
+                        _webmark.RemoveWebMarker(id);
+                        changed = true;
+                        break;
+                    }
+                default:IsRunnning = false;break;
+            }
+
+        }
+        }
+
+    
+    addcommand.SetAction((parseResult) => {
     string[] name = parseResult.GetValue(nameoption);
     string[] url = parseResult.GetValue(urloption);
     string[] category = parseResult.GetValue(categoryoption);
@@ -120,6 +202,7 @@ addcommand.SetAction((parseResult) => {
 _webmark.FileWriter(JsonFile);
 
 });
+   
 removeCommand.SetAction((ParseResult) =>
 {
     int idval = ParseResult.GetValue(idOption);
@@ -146,5 +229,13 @@ updateCommand.SetAction((ParseResult) => {
 importcommand.SetAction((parseResult) => { });
 
 parseResult.Invoke();
-    
 
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
