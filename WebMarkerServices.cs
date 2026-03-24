@@ -49,11 +49,11 @@ namespace Webmarkers
             _webMarkers.RemoveAt(index-1); 
         }
 
-        public void ListWebMarker(string[]? category)
+        public void ListWebMarker(string? category)
         {
-            if (category.Length>0) {
+            if (string.IsNullOrEmpty(category)) {
                 IEnumerable <WebMarker> result= from m in _webMarkers
-                                                where m.Category == category[0]
+                                                where m.Category == category
                                                  select m;
                 _webMarkers = result.ToList();
 
@@ -111,11 +111,18 @@ namespace Webmarkers
             
         }
 
-        public void UpdateWebMarker(int idval,string[] url)
+        public void UpdateWebMarker(int idval,string url)
         {
-            _webMarkers[idval - 1].WebUrl= url[0];
+            _webMarkers[idval - 1].WebUrl= url;
         }
 
-       
+        public FileInfo InitializeFile(string path)
+        {
+            FileInfo json_file = new FileInfo(path);
+            if (!File.Exists(json_file.FullName)){
+                File.Create(json_file.FullName);
+            }
+            return json_file;
+        }
     }
 }

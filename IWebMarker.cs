@@ -13,7 +13,8 @@ namespace Webmarkers
         public void ImportWebMarker(List<WebMarker> _webMarker, FileInfo _file);
         public void FileReader(FileInfo file);
         public void FileWriter(FileInfo file);
-        public void UpdateWebMarker(int idval, string[] url);
-        public void ListWebMarker(string[]? category);
+        public void UpdateWebMarker(int idval, string url);
+        public void ListWebMarker(string? category);
+        public FileInfo InitializeFile(string path);
     }
 }
