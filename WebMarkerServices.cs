@@ -10,7 +10,7 @@ namespace Webmarkers
 {
     public class WebMarkerServices:IWebMarker
     {
-        private List<WebMarker> _webMarkers = new();
+        private List<WebMarker> _webMarkers;
         public List<WebMarker> WebMarkers
         {
             get => _webMarkers;
@@ -21,8 +21,19 @@ namespace Webmarkers
 
         public void AddWebMarker(string name, string url, string category)
         {
-            _webMarkers.Add(new WebMarker(name, url, category));
-            
+            IEnumerable<string> Markers = from x in _webMarkers
+                                          select x.WebName;
+            if (!Markers.Contains(name))
+            {
+                _webMarkers.Add(new WebMarker(name, url, category));
+                Console.WriteLine("Added sucessfully");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("You cannot enter the same bookmark again");
+                Console.ResetColor();
+            }
         }
         public void AddWebMarker(string[] name, string[] url, string[] category)
         {
@@ -51,7 +62,7 @@ namespace Webmarkers
 
         public void ListWebMarker(string? category)
         {
-            if (string.IsNullOrEmpty(category)) {
+            if (!string.IsNullOrEmpty(category)) {
                 IEnumerable <WebMarker> result= from m in _webMarkers
                                                 where m.Category == category
                                                  select m;

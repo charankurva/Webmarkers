@@ -67,8 +67,8 @@ namespace Webmarkers.Commands
                             var category = AnsiConsole.Prompt<string>(new SelectionPrompt<string>()
                                 .Title("[yellow]choose a category:[/]")
                                 .AddChoices("anime", "movie", "learning"));
-
                             _service.AddWebMarker(web_name, web_url, category);
+                            _service.FileWriter(_service.InitializeFile(_settings.FilePath));
 
                             AnsiConsole.MarkupLine(web_name);
                             changed = true;

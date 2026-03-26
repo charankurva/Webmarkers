@@ -25,10 +25,10 @@ namespace Webmarkers.Commands
                 string name = parseResult.GetValue(nameoption);
                 string url = parseResult.GetValue(urloption);
                 string category = parseResult.GetValue(categoryoption);
-
-                service.FileReader(_service.InitializeFile(_settings.FilePath));
                 service.AddWebMarker(name, url, category);
                 service.FileWriter(_service.InitializeFile(_settings.FilePath));
+               
+
             });
 
         }
